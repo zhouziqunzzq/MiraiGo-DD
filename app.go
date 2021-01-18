@@ -8,6 +8,7 @@ import (
 	"github.com/zhouziqunzzq/MiraiGo-DD/config"
 	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
 
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/logging"
 )
 

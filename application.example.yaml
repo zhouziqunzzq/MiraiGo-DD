@@ -1,0 +1,8 @@
+bot:
+  account: 123456789
+  password: 123456789
+
+modules:
+  daredemo_suki:
+    is_enabled: true
+    config_path: "./dd.yaml"

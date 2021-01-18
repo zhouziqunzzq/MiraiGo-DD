@@ -1,9 +1,11 @@
 .idea/
 
 application.yaml
+dd.yaml
 device.json
 
 logs/
+dd_img/
 
 MiraiGo-DD
 
