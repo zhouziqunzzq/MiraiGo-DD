@@ -4,11 +4,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/Logiase/MiraiGo-Template/bot"
-	"github.com/Logiase/MiraiGo-Template/config"
-	"github.com/Logiase/MiraiGo-Template/utils"
+	"github.com/zhouziqunzzq/MiraiGo-DD/bot"
+	"github.com/zhouziqunzzq/MiraiGo-DD/config"
+	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
 
-	_ "github.com/Logiase/MiraiGo-Template/modules/logging"
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/logging"
 )
 
 func init() {
