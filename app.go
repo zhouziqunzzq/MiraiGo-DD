@@ -18,6 +18,9 @@ func init() {
 }
 
 func main() {
+	// Generate random device.json if necessary
+	bot.GenRandomDevice()
+
 	// 快速初始化
 	bot.Init()
 

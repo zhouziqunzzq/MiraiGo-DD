@@ -66,6 +66,7 @@ func GenRandomDevice() {
 	b, _ := utils.FileExist("./device.json")
 	if b {
 		logger.Warn("device.json exists, will not write device to file")
+		return
 	}
 	err := ioutil.WriteFile("device.json", client.SystemDeviceInfo.ToJson(), os.FileMode(0755))
 	if err != nil {
@@ -75,6 +76,12 @@ func GenRandomDevice() {
 
 // Login 登录
 func Login() {
+	// ref: https://github.com/Mrs4s/MiraiGo/issues/112
+	// Set AllowSlider = true to avoid 'version not supported' error
+	logger.Debugf("AllowSlider: %t", Instance.AllowSlider)
+	Instance.AllowSlider = true
+	logger.Debugf("AllowSlider: %t", Instance.AllowSlider)
+
 	resp, err := Instance.Login()
 	console := bufio.NewReader(os.Stdin)
 

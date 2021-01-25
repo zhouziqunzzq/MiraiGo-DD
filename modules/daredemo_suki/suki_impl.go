@@ -1,6 +1,7 @@
 package daredemo_suki
 
 import (
+	"bytes"
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/zhouziqunzzq/MiraiGo-DD/bot"
@@ -154,7 +155,8 @@ func (m *suki) handleGroupMessage(qqClient *client.QQClient, groupMessage *messa
 	logger.Infof("DD triggered by message: %s", groupMessage.ToString())
 	msg := message.NewSendingMessage()
 	selectedImg := m.ddImgPool[rand.Intn(len(m.ddImgPool))]
-	upImg, err := qqClient.UploadGroupImage(groupMessage.GroupCode, selectedImg)
+	r := bytes.NewReader(selectedImg)
+	upImg, err := qqClient.UploadGroupImage(groupMessage.GroupCode, r)
 	if err != nil {
 		logger.WithError(err).Error("unable to upload group img")
 		return
