@@ -1,19 +1,18 @@
 package main
 
 import (
-	"os"
-	"os/signal"
-
 	"github.com/zhouziqunzzq/MiraiGo-DD/bot"
 	"github.com/zhouziqunzzq/MiraiGo-DD/config"
 	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
+	"os"
+	"os/signal"
 
 	// register modules
 	// not sorted alphabetically as intended
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/logging"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/shell"
-	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/bili"
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
 )
 
 func init() {

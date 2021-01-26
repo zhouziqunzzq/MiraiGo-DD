@@ -2,6 +2,7 @@ package logging
 
 import (
 	"sync"
+	"syscall"
 
 	"github.com/Mrs4s/MiraiGo/client"
 	"github.com/Mrs4s/MiraiGo/message"
@@ -143,5 +144,26 @@ func registerLog(b *bot.Bot) {
 
 	b.OnDisconnected(func(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
 		logDisconnect(event)
+
+		// try to reconnect
+		cnt := 0
+		for cnt < 10 {
+			cnt++
+			if rsp, err := b.Login(); err != nil || !rsp.Success {
+				logger.Warnf("reconnect failed, retrying (%d/%d)", cnt, 10)
+				continue
+			} else {
+				// reconnect success, refresh info
+				logger.Info("reconnect success")
+				bot.RefreshList()
+				break
+			}
+		}
+
+		// terminate if reconnection failed
+		if !b.Online {
+			logger.Error("failed to restore from disconnection, exiting")
+			_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+		}
 	})
 }
