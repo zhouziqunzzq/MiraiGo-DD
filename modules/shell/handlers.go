@@ -1,5 +1,6 @@
 package shell
 
+import suki "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
 import "github.com/Mrs4s/MiraiGo/message"
 
 func handlePing(ctx *CmdContext) {
@@ -11,6 +12,12 @@ func handlePersecute(ctx *CmdContext) {
 		sendTextRsp("请提供唯一的参数", ctx)
 	} else {
 		sendTextRsp("今天也在迫害"+ctx.ParsedCmd.Args[0]+"嘛", ctx)
+	}
+}
+
+func handleDd(ctx *CmdContext) {
+	if originMsg, ok := ctx.OriginMsg.(*message.GroupMessage); ok {
+		suki.SendDdPic(ctx.Client, originMsg.GroupCode)
 	}
 }
 

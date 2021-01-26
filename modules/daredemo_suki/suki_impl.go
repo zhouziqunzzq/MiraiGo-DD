@@ -126,6 +126,19 @@ func (m *suki) checkKeywords(s string) bool {
 	return false
 }
 
+func (m *suki) SendDdPic(qqClient *client.QQClient, groupId int64) {
+	msg := message.NewSendingMessage()
+	selectedImg := m.ddImgPool[rand.Intn(len(m.ddImgPool))]
+	r := bytes.NewReader(selectedImg)
+	upImg, err := qqClient.UploadGroupImage(groupId, r)
+	if err != nil {
+		logger.WithError(err).Error("unable to upload group img")
+		return
+	}
+	msg.Append(upImg)
+	qqClient.SendGroupMessage(groupId, msg)
+}
+
 func (m *suki) handleGroupMessage(qqClient *client.QQClient, groupMessage *message.GroupMessage) {
 	// filter enabled groups
 	if _, ok := m.enabledGroupsMap[groupMessage.GroupCode]; !ok {
@@ -153,19 +166,7 @@ func (m *suki) handleGroupMessage(qqClient *client.QQClient, groupMessage *messa
 
 	// send random DD meme img
 	logger.Infof("DD triggered by message: %s", groupMessage.ToString())
-	msg := message.NewSendingMessage()
-	selectedImg := m.ddImgPool[rand.Intn(len(m.ddImgPool))]
-	r := bytes.NewReader(selectedImg)
-	upImg, err := qqClient.UploadGroupImage(groupMessage.GroupCode, r)
-	if err != nil {
-		logger.WithError(err).Error("unable to upload group img")
-		return
-	}
-	msg.Append(upImg)
-	qqClient.SendGroupMessage(
-		groupMessage.GroupCode,
-		msg,
-	)
+	m.SendDdPic(qqClient, groupMessage.GroupCode)
 
 	logger.Debugf("successfully handled group message from group chat %s(%d)",
 		groupMessage.GroupName,
