@@ -6,6 +6,7 @@ import (
 	"github.com/Mrs4s/MiraiGo/message"
 	"github.com/zhouziqunzzq/MiraiGo-DD/bot"
 	"github.com/zhouziqunzzq/MiraiGo-DD/config"
+	"github.com/zhouziqunzzq/MiraiGo-DD/modules/common"
 	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -118,6 +119,11 @@ func (m *suki) Stop(b *bot.Bot, wg *sync.WaitGroup) {
 }
 
 func (m *suki) checkKeywords(s string) bool {
+	// skip cmd
+	if len(s) > 0 && s[0] == common.CmdIdentifier {
+		return false
+	}
+
 	for _, w := range m.config.Keywords {
 		if strings.Contains(s, w) {
 			return true

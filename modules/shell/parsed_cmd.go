@@ -2,8 +2,7 @@ package shell
 
 import "errors"
 import "strings"
-
-const CmdIdentifier = '/'
+import "github.com/zhouziqunzzq/MiraiGo-DD/modules/common"
 
 type ParsedCmd struct {
 	Name string
@@ -37,7 +36,7 @@ func (pc *ParsedCmd) AppendArg(arg string) {
 // 	- an error indicating the error in the parsing process, if any
 func parseCmd(s string) (*ParsedCmd, error) {
 	s = strings.TrimSpace(s)
-	if len(s) == 0 || s[0] != CmdIdentifier {
+	if len(s) == 0 || s[0] != common.CmdIdentifier {
 		return nil, nil
 	}
 
