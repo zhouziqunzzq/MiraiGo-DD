@@ -180,7 +180,7 @@ func (m *bili) getBiliUidList() []int64 {
 }
 
 func (m *bili) pollBiliUserInfo() {
-	logger.Info("start polling subscribed bilibili user info")
+	logger.Debug("start polling subscribed bilibili user info")
 
 	uidList := m.getBiliUidList()
 	for _, uid := range uidList {
@@ -210,7 +210,7 @@ func (m *bili) pollBiliUserInfo() {
 		m.infoBufRwMu.Unlock()
 	}
 
-	logger.Infof("finish polling %d subscribed bilibili user info", len(uidList))
+	logger.Debugf("finish polling %d subscribed bilibili user info", len(uidList))
 }
 
 func (m *bili) broadcastStartLiveMsg(qqClient *client.QQClient, userInfo *UserInfo) {
