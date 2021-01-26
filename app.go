@@ -8,8 +8,10 @@ import (
 	"github.com/zhouziqunzzq/MiraiGo-DD/config"
 	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
 
-	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
+	// not sorted as intended
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/logging"
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/shell"
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
 )
 
 func init() {

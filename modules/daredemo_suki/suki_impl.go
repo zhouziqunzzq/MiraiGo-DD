@@ -17,7 +17,7 @@ import (
 
 type suki struct {
 	isEnabled        bool
-	config           SukiConfig
+	config           Config
 	enabledGroupsMap map[int64]bool
 	ddImgPool        [][]byte
 }
@@ -25,7 +25,7 @@ type suki struct {
 func NewSuki() *suki {
 	return &suki{
 		isEnabled:        false,
-		config:           SukiConfig{},
+		config:           Config{},
 		enabledGroupsMap: make(map[int64]bool),
 		ddImgPool:        make([][]byte, 0),
 	}
@@ -52,8 +52,8 @@ func (m *suki) Init() {
 		configPath = "./dd.yaml"
 	}
 	logger.Debugf("reading config from %s", configPath)
-	bytes := utils.ReadFile(configPath)
-	err := yaml.Unmarshal(bytes, &m.config)
+	cb := utils.ReadFile(configPath)
+	err := yaml.Unmarshal(cb, &m.config)
 	if err != nil {
 		logger.WithError(err).Errorf("unable to read config file in %s", configPath)
 		m.isEnabled = false

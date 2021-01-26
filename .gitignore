@@ -1,8 +1,9 @@
 .idea/
 
+device.json
 application.yaml
 dd.yaml
-device.json
+shell.yaml
 
 logs/
 dd_img/

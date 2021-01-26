@@ -6,3 +6,7 @@ modules:
   daredemo_suki:
     is_enabled: true
     config_path: "./dd.yaml"
+
+  shell:
+    is_enabled: true
+    config_path: "./shell.yaml"
