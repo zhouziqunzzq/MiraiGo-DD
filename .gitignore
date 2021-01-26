@@ -4,6 +4,7 @@ device.json
 application.yaml
 dd.yaml
 shell.yaml
+bili.yaml
 
 logs/
 dd_img/

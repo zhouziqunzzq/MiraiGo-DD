@@ -10,3 +10,7 @@ modules:
   shell:
     is_enabled: true
     config_path: "./shell.yaml"
+
+  bili:
+    is_enabled: true
+    config_path: "./bili.yaml"
