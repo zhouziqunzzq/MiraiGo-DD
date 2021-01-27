@@ -9,6 +9,7 @@ import (
 
 	// register modules
 	// not sorted alphabetically as intended
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/auto_reconnect"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/logging"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/shell"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/bili"
