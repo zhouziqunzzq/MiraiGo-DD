@@ -68,6 +68,7 @@ func (m *shell) Init() {
 	m.registerCmd("ping", handlePing, false)
 	m.registerCmd("persecute", handlePersecute, true)
 	m.registerCmd("dd", handleDd, false)
+	m.registerCmd("ls", handleLs, false)
 }
 
 func (m *shell) PostInit() {

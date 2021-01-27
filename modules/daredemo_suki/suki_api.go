@@ -6,5 +6,7 @@ import "github.com/Mrs4s/MiraiGo/client"
 // They should only be called after initialization of all modules.
 
 func SendDdPic(qqClient *client.QQClient, groupId int64) {
-	instance.SendDdPic(qqClient, groupId)
+	if instance != nil {
+		instance.SendDdPic(qqClient, groupId)
+	}
 }
