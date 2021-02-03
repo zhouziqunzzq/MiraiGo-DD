@@ -3,6 +3,7 @@ package bili
 const (
 	StartLive int = iota
 	StopLive
+	NewDanmu
 )
 
 type Event struct {
@@ -15,4 +16,10 @@ func NewEvent(eventType int, eventData interface{}) *Event {
 		Type: eventType,
 		Data: eventData,
 	}
+}
+
+type DanmuEventData struct {
+	FromUserName     string
+	Content          string
+	StreamerUserInfo *UserInfo
 }

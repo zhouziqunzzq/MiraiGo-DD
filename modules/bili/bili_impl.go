@@ -8,6 +8,7 @@ import (
 	"github.com/zhouziqunzzq/MiraiGo-DD/config"
 	"github.com/zhouziqunzzq/MiraiGo-DD/utils"
 	"gopkg.in/yaml.v2"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,6 +21,8 @@ type bili struct {
 	subscriptionRwMu     sync.RWMutex
 	biliUserInfoBuf      map[int64]*UserInfo // infoBufRwMu protected
 	infoBufRwMu          sync.RWMutex
+	biliUidToMsgFetcher  map[int64]*LiveMsgFetcher // fetcherRwMu protected
+	fetcherRwMu          sync.RWMutex
 	eventChan            chan *Event
 	quitPolling          chan bool
 	quitBroadcasting     chan bool
@@ -32,6 +35,7 @@ func NewBili() *bili {
 		groupIdToBiliUidList: make(map[int64][]int64),
 		biliUidToGroupIdList: make(map[int64][]int64),
 		biliUserInfoBuf:      make(map[int64]*UserInfo),
+		biliUidToMsgFetcher:  make(map[int64]*LiveMsgFetcher),
 		eventChan:            make(chan *Event),
 		quitPolling:          make(chan bool),
 		quitBroadcasting:     make(chan bool),
@@ -129,14 +133,30 @@ func (m *bili) Start(b *bot.Bot) {
 				case StartLive:
 					if userInfo, ok := e.Data.(*UserInfo); ok {
 						m.broadcastStartLiveMsg(b.QQClient, userInfo)
+						// start fetching danmu for this user
+						m.runLiveMsgFetcherForBiliUser(int64(userInfo.Mid))
 					} else {
 						logger.Errorf("unknown event data provided for StartLive, event: %v", e)
 					}
 				case StopLive:
 					if userInfo, ok := e.Data.(*UserInfo); ok {
 						m.broadcastStopLiveMsg(b.QQClient, userInfo)
+						// stop fetching danmu for this user
+						m.stopLiveMsgFetcherForBiliUser(int64(userInfo.Mid))
 					} else {
 						logger.Errorf("unknown event data provided for StopLive, event: %v", e)
+					}
+				case NewDanmu:
+					if danmuData, ok := e.Data.(*DanmuEventData); ok {
+						// check danmu keywords
+						for _, w := range m.config.DanmuForwardKeywords {
+							if strings.Contains(danmuData.Content, w) {
+								m.broadcastDanmu(b.QQClient, danmuData)
+								break
+							}
+						}
+					} else {
+						logger.Errorf("unknown event data provided for NewDanmu, event: %v", e)
 					}
 				default:
 					logger.Debugf("unknown event type %d encountered, skipping", e.Type)
@@ -146,6 +166,19 @@ func (m *bili) Start(b *bot.Bot) {
 			}
 		}
 	}()
+
+	// test live msg fetcher
+	//m.infoBufRwMu.Lock()
+	//m.biliUserInfoBuf[407106379] = &UserInfo{
+	//	Mid:  407106379,
+	//	Name: "test",
+	//	LiveRoom: LiveRoom{
+	//		RoomStatus: Streaming,
+	//		RoomId:     21396545,
+	//	},
+	//}
+	//m.infoBufRwMu.Unlock()
+	//m.runLiveMsgFetcherForBiliUser(407106379)
 }
 
 func (m *bili) Stop(b *bot.Bot, wg *sync.WaitGroup) {
@@ -161,6 +194,13 @@ func (m *bili) Stop(b *bot.Bot, wg *sync.WaitGroup) {
 
 	// stop broadcasting coroutine
 	m.quitBroadcasting <- true
+
+	// stop live fetchers
+	m.fetcherRwMu.RLock()
+	for _, f := range m.biliUidToMsgFetcher {
+		f.Stop()
+	}
+	m.fetcherRwMu.RUnlock()
 }
 
 func (m *bili) registerCallbacks(b *bot.Bot) {
@@ -233,6 +273,17 @@ func (m *bili) broadcastStopLiveMsg(qqClient *client.QQClient, userInfo *UserInf
 	m.broadcastMsgToSubscribedGroup(qqClient, msg, int64(userInfo.Mid))
 }
 
+func (m *bili) broadcastDanmu(qqClient *client.QQClient, danmuData *DanmuEventData) {
+	userInfo := danmuData.StreamerUserInfo
+	msg := message.NewSendingMessage()
+	msg.Append(message.NewText(fmt.Sprintf(
+		"【弹幕中继】\n主播：%s\n直播间标题：%s\n发送人：%s\n内容：%s",
+		userInfo.Name, userInfo.LiveRoom.Title, danmuData.FromUserName, danmuData.Content,
+	)))
+
+	m.broadcastMsgToSubscribedGroup(qqClient, msg, int64(userInfo.Mid))
+}
+
 func (m *bili) broadcastMsgToSubscribedGroup(qqClient *client.QQClient, msg *message.SendingMessage, bid int64) {
 	m.subscriptionRwMu.RLock()
 	defer m.subscriptionRwMu.RUnlock()
@@ -244,5 +295,42 @@ func (m *bili) broadcastMsgToSubscribedGroup(qqClient *client.QQClient, msg *mes
 		for _, groupId := range l {
 			qqClient.SendGroupMessage(groupId, msg)
 		}
+	}
+}
+
+func (m *bili) runLiveMsgFetcherForBiliUser(bid int64) {
+	m.fetcherRwMu.Lock()
+	defer m.fetcherRwMu.Unlock()
+
+	if _, ok := m.biliUidToMsgFetcher[bid]; ok {
+		logger.Warnf("live msg fetcher instance for bid %d already exist, ignoring...", bid)
+	} else {
+		// get userinfo from buf
+		m.infoBufRwMu.RLock()
+		if info, ok := m.biliUserInfoBuf[bid]; !ok {
+			logger.Errorf("invalid bili uid %d, ignoring...", bid)
+		} else {
+			fetcher := NewLiveMsgFetcher(info, m.eventChan)
+			err := fetcher.Init()
+			if err != nil {
+				logger.WithError(err).Errorf("failed to initialize live msg fetcher for bid %d", bid)
+			}
+
+			fetcher.Run()
+			m.biliUidToMsgFetcher[bid] = fetcher
+		}
+		m.infoBufRwMu.RUnlock()
+	}
+}
+
+func (m *bili) stopLiveMsgFetcherForBiliUser(bid int64) {
+	m.fetcherRwMu.Lock()
+	defer m.fetcherRwMu.Unlock()
+
+	if fetcher, ok := m.biliUidToMsgFetcher[bid]; !ok {
+		logger.Warnf("no live msg fetcher instance found for bid %d, ignoring...", bid)
+	} else {
+		fetcher.Stop()
+		delete(m.biliUidToMsgFetcher, bid)
 	}
 }

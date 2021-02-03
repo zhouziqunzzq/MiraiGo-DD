@@ -3,3 +3,5 @@ subscription: { 123456789: [ 233, 666 ] }
 
 # In seconds
 polling_interval: 60
+
+danmu_forward_keywords: [ "点歌" ]
