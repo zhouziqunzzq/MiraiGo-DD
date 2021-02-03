@@ -235,6 +235,7 @@ func (m *bili) pollBiliUserInfo() {
 
 		// update info buf and trigger events
 		if oldUserInfo, ok := m.biliUserInfoBuf[uid]; ok {
+			// we have old user info, check status change
 			if oldUserInfo.LiveRoom.LiveStatus == NotStreaming && newUserInfo.LiveRoom.LiveStatus == Streaming {
 				logger.Infof("bilibili user %s(%d) has started streaming", newUserInfo.Name, uid)
 				e := NewEvent(StartLive, newUserInfo)
@@ -242,6 +243,13 @@ func (m *bili) pollBiliUserInfo() {
 			} else if oldUserInfo.LiveRoom.LiveStatus == Streaming && newUserInfo.LiveRoom.LiveStatus == NotStreaming {
 				logger.Infof("bilibili user %s(%d) has stopped streaming", newUserInfo.Name, uid)
 				e := NewEvent(StopLive, newUserInfo)
+				m.eventChan <- e
+			}
+		} else {
+			// we don't have old user info, just check current status
+			if newUserInfo.LiveRoom.LiveStatus == Streaming {
+				logger.Infof("bilibili user %s(%d) has started streaming", newUserInfo.Name, uid)
+				e := NewEvent(StartLive, newUserInfo)
 				m.eventChan <- e
 			}
 		}
