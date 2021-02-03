@@ -126,6 +126,16 @@ func (m *bili) Start(b *bot.Bot) {
 
 	// start event broadcasting coroutine
 	go func() {
+		// wait until bot is online
+		for {
+			if b.Online {
+				break
+			} else {
+				time.Sleep(1 * time.Second)
+			}
+		}
+
+		logger.Info("starting event broadcasting coroutine")
 		for {
 			select {
 			case e := <-m.eventChan:
