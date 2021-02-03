@@ -3,6 +3,7 @@ package bili
 import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"sync"
 	"time"
 )
 
@@ -11,6 +12,7 @@ import (
 const (
 	BiliLiveMsgApi    = "wss://broadcastlv.chat.bilibili.com:2245/sub"
 	HeartBeatInterval = 30
+	MaxReconnection   = 10
 )
 
 type LiveMsgFetcher struct {
@@ -21,6 +23,7 @@ type LiveMsgFetcher struct {
 	eventChan  chan<- *Event
 	closeChan  chan bool
 	quitHbChan chan bool
+	writeMu    sync.Mutex
 }
 
 func NewLiveMsgFetcher(userInfo *UserInfo, eventChan chan *Event) *LiveMsgFetcher {
@@ -50,6 +53,19 @@ func (f *LiveMsgFetcher) Init() error {
 	}
 
 	return nil
+}
+
+func (f *LiveMsgFetcher) reconnect() bool {
+	for i := 1; i <= MaxReconnection; i++ {
+		logger.Warnf("trying to reconnect to room %d (%d/%d)", f.RoomID, i, MaxReconnection)
+		err := f.Init()
+		if err == nil {
+			return true
+		} else {
+			logger.WithError(err).Errorf("reconnect failed for room %d", f.RoomID)
+		}
+	}
+	return false
 }
 
 func (f *LiveMsgFetcher) Run() {
@@ -85,11 +101,19 @@ func (f *LiveMsgFetcher) Run() {
 				_, buffer, err := f.conn.ReadMessage()
 				if err != nil {
 					logger.WithError(err).Errorf("failed to read message for live room %d", f.RoomID)
+					// try to reconnect
+					if f.reconnect() {
+						continue
+					} else {
+						logger.Errorf("unable to reconnect for room %d, stopping live msg fetcher", f.RoomID)
+						return
+					}
 				}
 
 				msg, err := decodeMsg(buffer)
 				if err != nil {
 					logger.WithError(err).Errorf("failed to decode message for live room %d", f.RoomID)
+					continue
 				}
 
 				switch msg.Op {
@@ -140,6 +164,8 @@ func (f *LiveMsgFetcher) sendJoinRequest() error {
 	}
 
 	reqBin := encodeMsg(reqJson, JoinOp, JsonProcVer)
+	f.writeMu.Lock()
+	defer f.writeMu.Unlock()
 	err = f.conn.WriteMessage(websocket.BinaryMessage, reqBin)
 	if err != nil {
 		return err
@@ -150,6 +176,8 @@ func (f *LiveMsgFetcher) sendJoinRequest() error {
 
 func (f *LiveMsgFetcher) sendHeartBeat() error {
 	reqBin := encodeMsg([]byte{}, HeartBeatOp, Uint32ProcVer)
+	f.writeMu.Lock()
+	defer f.writeMu.Unlock()
 	err := f.conn.WriteMessage(websocket.BinaryMessage, reqBin)
 	if err != nil {
 		return err
