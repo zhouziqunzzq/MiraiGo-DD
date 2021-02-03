@@ -314,10 +314,10 @@ func (m *bili) runLiveMsgFetcherForBiliUser(bid int64) {
 			err := fetcher.Init()
 			if err != nil {
 				logger.WithError(err).Errorf("failed to initialize live msg fetcher for bid %d", bid)
+			} else {
+				fetcher.Run()
+				m.biliUidToMsgFetcher[bid] = fetcher
 			}
-
-			fetcher.Run()
-			m.biliUidToMsgFetcher[bid] = fetcher
 		}
 		m.infoBufRwMu.RUnlock()
 	}
