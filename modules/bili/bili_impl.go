@@ -325,19 +325,34 @@ func (m *bili) runLiveMsgFetcherForBiliUser(bid int64) {
 	} else {
 		// get userinfo from buf
 		m.infoBufRwMu.RLock()
+		defer m.infoBufRwMu.RUnlock()
 		if info, ok := m.biliUserInfoBuf[bid]; !ok {
 			logger.Errorf("invalid bili uid %d, ignoring...", bid)
 		} else {
 			fetcher := NewLiveMsgFetcher(info, m.eventChan)
-			err := fetcher.Init()
-			if err != nil {
-				logger.WithError(err).Errorf("failed to initialize live msg fetcher for bid %d", bid)
-			} else {
+			initSuccess := false
+			for i := 1; i <= MaxReconnection; i++ {
+				err := fetcher.Init()
+				if err != nil {
+					logger.WithError(err).Errorf(
+						"failed to initialize live msg fetcher for bid %d, retrying (%d/%d)",
+						bid, i, MaxReconnection,
+					)
+				} else {
+					initSuccess = true
+					break
+				}
+			}
+			if initSuccess {
 				fetcher.Run()
 				m.biliUidToMsgFetcher[bid] = fetcher
+			} else {
+				logger.Errorf(
+					"failed to initialize live msg fetcher for bid %d after %d attempts",
+					bid, MaxReconnection,
+				)
 			}
 		}
-		m.infoBufRwMu.RUnlock()
 	}
 }
 
