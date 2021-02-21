@@ -23,7 +23,9 @@ type LiveMsgFetcher struct {
 	eventChan  chan<- *Event
 	closeChan  chan bool
 	quitHbChan chan bool
+	quitWg     sync.WaitGroup
 	writeMu    sync.Mutex
+	isRunning  bool
 }
 
 func NewLiveMsgFetcher(userInfo *UserInfo, eventChan chan *Event) *LiveMsgFetcher {
@@ -35,6 +37,7 @@ func NewLiveMsgFetcher(userInfo *UserInfo, eventChan chan *Event) *LiveMsgFetche
 		eventChan:  eventChan,
 		closeChan:  make(chan bool),
 		quitHbChan: make(chan bool),
+		isRunning:  false,
 	}
 }
 
@@ -69,8 +72,18 @@ func (f *LiveMsgFetcher) reconnect() bool {
 }
 
 func (f *LiveMsgFetcher) Run() {
+	if f.isRunning {
+		logger.Infof("live msg fetcher for live room %d is already running, ignoring...", f.RoomID)
+		return
+	} else {
+		defer func() { f.isRunning = true }()
+	}
+
 	// start heartbeat coroutine
 	go func() {
+		f.quitWg.Add(1)
+		defer f.quitWg.Done()
+		logger.Infof("heartbeat coroutine for live room %d has started", f.RoomID)
 		for {
 			err := f.sendHeartBeat()
 			if err != nil {
@@ -81,6 +94,7 @@ func (f *LiveMsgFetcher) Run() {
 				continue
 			case <-f.quitHbChan:
 				f.hbTicker.Stop()
+				logger.Infof("heartbeat coroutine for live room %d has stopped", f.RoomID)
 				return
 			}
 		}
@@ -88,14 +102,16 @@ func (f *LiveMsgFetcher) Run() {
 
 	// start main message loop coroutine
 	go func() {
+		f.quitWg.Add(1)
+		defer f.quitWg.Done()
 		defer f.conn.Close()
-		defer func() {
-			f.quitHbChan <- true
-		}()
+		defer func() { f.quitHbChan <- true }()
+		logger.Infof("main message loop coroutine for live room %d has started", f.RoomID)
 
 		for {
 			select {
 			case <-f.closeChan:
+				logger.Infof("main message loop coroutine for live room %d has stopped", f.RoomID)
 				return
 			default:
 				_, buffer, err := f.conn.ReadMessage()
@@ -151,6 +167,8 @@ func (f *LiveMsgFetcher) Run() {
 
 func (f *LiveMsgFetcher) Stop() {
 	f.closeChan <- true
+	f.quitWg.Wait()
+	f.isRunning = false
 }
 
 func (f *LiveMsgFetcher) sendJoinRequest() error {
