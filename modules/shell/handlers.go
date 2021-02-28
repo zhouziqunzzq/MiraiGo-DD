@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/zhouziqunzzq/MiraiGo-DD/modules/bili"
 	suki "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
+	"github.com/zhouziqunzzq/MiraiGo-DD/modules/naive_chatbot"
+	"strconv"
 	"strings"
 )
 import "github.com/Mrs4s/MiraiGo/message"
@@ -58,8 +60,52 @@ func handleLs(ctx *CmdContext) {
 			} else {
 				sendTextRsp("暂时仅支持群内查询订阅主播信息", ctx)
 			}
+		case "chatbot":
+			if _, ok := ctx.OriginMsg.(*message.GroupMessage); ok {
+				triggerProb, err := naive_chatbot.GetTriggerProb()
+				if err != nil {
+					sendTextRsp("聊天机器人未启用", ctx)
+				} else {
+					rsp := "聊天机器人已启用\n"
+					rsp += fmt.Sprintf("触发概率：%f", triggerProb)
+					sendTextRsp(rsp, ctx)
+				}
+			}
 		default:
 			sendTextRsp(fmt.Sprintf("对象%s暂不支持 ls 命令", ctx.ParsedCmd.Args[0]), ctx)
+		}
+	}
+}
+
+func handleSet(ctx *CmdContext) {
+	if len(ctx.ParsedCmd.Args) == 0 {
+		sendTextRsp("参数错误", ctx)
+	} else {
+		switch ctx.ParsedCmd.Args[0] {
+		case "chatbot":
+			// set chatbot <key> <value>
+			if len(ctx.ParsedCmd.Args) < 3 {
+				sendTextRsp("参数错误！命令格式：set chatbot <key> <value>", ctx)
+				return
+			}
+			switch ctx.ParsedCmd.Args[1] {
+			case "trigger_prob":
+				newProb, err := strconv.ParseFloat(ctx.ParsedCmd.Args[2], 32)
+				if err != nil {
+					sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
+					return
+				}
+				err = naive_chatbot.SetTriggerProb(float32(newProb))
+				if err != nil {
+					sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
+					return
+				}
+				sendTextRsp("参数更新成功", ctx)
+			default:
+				sendTextRsp(fmt.Sprintf("无效的 key (%s)", ctx.ParsedCmd.Args[1]), ctx)
+			}
+		default:
+			sendTextRsp(fmt.Sprintf("对象%s暂不支持 set 命令", ctx.ParsedCmd.Args[0]), ctx)
 		}
 	}
 }

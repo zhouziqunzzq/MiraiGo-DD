@@ -5,6 +5,7 @@ application.yaml
 dd.yaml
 shell.yaml
 bili.yaml
+naive_chatbot.yaml
 
 logs/
 dd_img/

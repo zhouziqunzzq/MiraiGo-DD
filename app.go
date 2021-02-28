@@ -14,6 +14,7 @@ import (
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/shell"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/bili"
 	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
+	_ "github.com/zhouziqunzzq/MiraiGo-DD/modules/naive_chatbot"
 )
 
 func init() {

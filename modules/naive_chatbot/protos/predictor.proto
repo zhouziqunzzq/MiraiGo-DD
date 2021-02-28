@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+service ChatPredictor {
+  // get predictions for one chat msg
+  rpc PredictOne (PredictRequest) returns (PredictReply) {}
+}
+
+// The request message containing the user's name.
+message PredictRequest {
+  required string msg = 1;
+  optional int64 n_prediction = 2 [default = 5];
+  optional int64 time_offset_seconds = 3 [default = 300];
+  optional float sim_cutoff = 4 [default = 0.0];
+}
+
+// The response message containing the greetings
+message PredictReply {
+  message PredictReplyElem {
+    required string msg = 1;
+    required float sim = 2;
+  }
+  repeated PredictReplyElem result = 1;
+}

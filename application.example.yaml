@@ -14,3 +14,7 @@ modules:
   bili:
     is_enabled: true
     config_path: "./bili.yaml"
+
+  naive_chatbot:
+    is_enabled: true
+    config_path: "./naive_chatbot.yaml"

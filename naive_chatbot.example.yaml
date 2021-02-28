@@ -1,0 +1,6 @@
+enabled_groups: [ 321654987 ]
+n_prediction: 5
+time_offset_seconds: 300
+sim_cutoff: 0.0
+grpc_server_addr: "localhost:20233"
+trigger_prob: 0.0 # [0.0, 1.0]
