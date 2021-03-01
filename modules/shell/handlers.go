@@ -61,8 +61,8 @@ func handleLs(ctx *CmdContext) {
 				sendTextRsp("暂时仅支持群内查询订阅主播信息", ctx)
 			}
 		case "chatbot":
-			if _, ok := ctx.OriginMsg.(*message.GroupMessage); ok {
-				triggerProb, err := naive_chatbot.GetTriggerProb()
+			if gMsg, ok := ctx.OriginMsg.(*message.GroupMessage); ok {
+				triggerProb, err := naive_chatbot.GetTriggerProb(gMsg.GroupCode)
 				if err != nil {
 					sendTextRsp("聊天机器人未启用", ctx)
 				} else {
@@ -70,6 +70,8 @@ func handleLs(ctx *CmdContext) {
 					rsp += fmt.Sprintf("触发概率：%f", triggerProb)
 					sendTextRsp(rsp, ctx)
 				}
+			} else {
+				sendTextRsp("暂时仅支持群内查询聊天机器人信息", ctx)
 			}
 		default:
 			sendTextRsp(fmt.Sprintf("对象%s暂不支持 ls 命令", ctx.ParsedCmd.Args[0]), ctx)
@@ -83,26 +85,30 @@ func handleSet(ctx *CmdContext) {
 	} else {
 		switch ctx.ParsedCmd.Args[0] {
 		case "chatbot":
-			// set chatbot <key> <value>
-			if len(ctx.ParsedCmd.Args) < 3 {
-				sendTextRsp("参数错误！命令格式：set chatbot <key> <value>", ctx)
-				return
-			}
-			switch ctx.ParsedCmd.Args[1] {
-			case "trigger_prob":
-				newProb, err := strconv.ParseFloat(ctx.ParsedCmd.Args[2], 32)
-				if err != nil {
-					sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
+			if gMsg, ok := ctx.OriginMsg.(*message.GroupMessage); ok {
+				// set chatbot <key> <value>
+				if len(ctx.ParsedCmd.Args) < 3 {
+					sendTextRsp("参数错误！命令格式：set chatbot <key> <value>", ctx)
 					return
 				}
-				err = naive_chatbot.SetTriggerProb(float32(newProb))
-				if err != nil {
-					sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
-					return
+				switch ctx.ParsedCmd.Args[1] {
+				case "trigger_prob":
+					newProb, err := strconv.ParseFloat(ctx.ParsedCmd.Args[2], 32)
+					if err != nil {
+						sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
+						return
+					}
+					err = naive_chatbot.SetTriggerProb(gMsg.GroupCode, float32(newProb))
+					if err != nil {
+						sendTextRsp(fmt.Sprintf("无效的 value (%s): %v", ctx.ParsedCmd.Args[2], err), ctx)
+						return
+					}
+					sendTextRsp("参数更新成功", ctx)
+				default:
+					sendTextRsp(fmt.Sprintf("无效的 key (%s)", ctx.ParsedCmd.Args[1]), ctx)
 				}
-				sendTextRsp("参数更新成功", ctx)
-			default:
-				sendTextRsp(fmt.Sprintf("无效的 key (%s)", ctx.ParsedCmd.Args[1]), ctx)
+			} else {
+				sendTextRsp("暂时仅支持群内设置聊天机器人参数", ctx)
 			}
 		default:
 			sendTextRsp(fmt.Sprintf("对象%s暂不支持 set 命令", ctx.ParsedCmd.Args[0]), ctx)

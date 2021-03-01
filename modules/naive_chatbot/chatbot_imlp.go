@@ -21,9 +21,10 @@ const (
 )
 
 type chatbot struct {
-	isEnabled        bool
-	config           Config
-	enabledGroupsMap map[int64]bool
+	isEnabled bool
+	config    Config
+	//enabledGroupsMap map[int64]bool
+	groupTriggerProb map[int64]float32
 	conn             *grpc.ClientConn
 	client           pb.ChatPredictorClient
 }
@@ -32,7 +33,7 @@ func NewChatbot() *chatbot {
 	return &chatbot{
 		isEnabled:        false,
 		config:           Config{},
-		enabledGroupsMap: make(map[int64]bool),
+		groupTriggerProb: make(map[int64]float32),
 		conn:             nil,
 		client:           nil,
 	}
@@ -75,8 +76,11 @@ func (m *chatbot) Init() {
 
 	// load enabled groups
 	for _, groupCode := range m.config.EnabledGroups {
-		m.enabledGroupsMap[groupCode] = true
-		logger.Infof("naive chatbot enabled for group %d", groupCode)
+		m.groupTriggerProb[groupCode] = m.config.TriggerProb
+		logger.Infof(
+			"naive chatbot enabled for group %d with default trigger prob %f",
+			groupCode, m.config.TriggerProb,
+		)
 	}
 
 	// connect to grpc server
@@ -135,12 +139,15 @@ func (m *chatbot) PredictOne(msg string) []*pb.PredictReply_PredictReplyElem {
 
 func (m *chatbot) handleGroupMessage(qqClient *client.QQClient, groupMessage *message.GroupMessage) {
 	// filter enabled groups
-	if _, ok := m.enabledGroupsMap[groupMessage.GroupCode]; !ok {
+	triggerProb := float32(0.0)
+	if tp, ok := m.groupTriggerProb[groupMessage.GroupCode]; !ok {
 		logger.Debugf("ignoring group message from group chat %s(%d)",
 			groupMessage.GroupName,
 			groupMessage.GroupCode,
 		)
 		return
+	} else {
+		triggerProb = tp
 	}
 
 	chatReq := groupMessage.ToString()
@@ -150,7 +157,7 @@ func (m *chatbot) handleGroupMessage(qqClient *client.QQClient, groupMessage *me
 	}
 
 	// trigger with probability of trigger prob
-	if rand.Float32() >= m.config.TriggerProb {
+	if rand.Float32() >= triggerProb {
 		return
 	}
 
@@ -162,7 +169,7 @@ func (m *chatbot) handleGroupMessage(qqClient *client.QQClient, groupMessage *me
 		msg := message.NewSendingMessage()
 		msg.Append(message.NewText(*(chosenRsp.Msg)))
 		qqClient.SendGroupMessage(groupMessage.GroupCode, msg)
-		logger.Debugf(
+		logger.Infof(
 			"reply to group message \"%s\" from group %s(%d) with msg \"%s\" and sim %f",
 			chatReq,
 			groupMessage.GroupName,

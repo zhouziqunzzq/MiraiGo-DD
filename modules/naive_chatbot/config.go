@@ -6,5 +6,5 @@ type Config struct {
 	TimeOffsetSeconds int64   `yaml:"time_offset_seconds"`
 	SimCutoff         float32 `yaml:"sim_cutoff"`
 	GrpcServerAddr    string  `yaml:"grpc_server_addr"`
-	TriggerProb    float32  `yaml:"trigger_prob"`
+	TriggerProb       float32 `yaml:"trigger_prob"`
 }
