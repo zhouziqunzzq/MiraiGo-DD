@@ -174,8 +174,10 @@ func (m *shell) handleGroupMessage(qqClient *client.QQClient, groupMessage *mess
 			qqClient.SendGroupMessage(groupMessage.GroupCode, m.getUnauthorizedErrResp())
 		}
 	} else {
+		// XXX: there could be multiple bots in the same group, so don't flood
+		// the chat with 'not found' messages...
 		logger.WithError(err).Debugf("cmd %s not found", rawStr)
-		qqClient.SendGroupMessage(groupMessage.GroupCode, m.getCmdNotFoundErrResp())
+		//qqClient.SendGroupMessage(groupMessage.GroupCode, m.getCmdNotFoundErrResp())
 	}
 }
 
