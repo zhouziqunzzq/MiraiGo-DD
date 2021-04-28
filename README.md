@@ -1,7 +1,7 @@
 # MiraiGo-DD
 A DD (Japanese: 誰でも大好き) QQ Bot created based
 on [MiraiGo](https://github.com/Mrs4s/MiraiGo) and
-[MiraiGo-Template](https://github.com/Mrs4s/MiraiGo-Template).
+[MiraiGo-Template](https://github.com/Logiase/MiraiGo-Template).
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/zhouziqunzzq/MiraiGo-DD)](https://goreportcard.com/report/github.com/zhouziqunzzq/MiraiGo-DD)
 
