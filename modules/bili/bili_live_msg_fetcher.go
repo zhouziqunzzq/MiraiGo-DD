@@ -11,10 +11,13 @@ import (
 
 const (
 	BiliLiveMsgApi    = "wss://broadcastlv.chat.bilibili.com:2245/sub"
-	HeartBeatInterval = 30
+	HeartBeatInterval = 30 * time.Second
 	MaxReconnection   = 10
-	ReadTimeout       = 10 * time.Second
-	WriteTimeout      = 10 * time.Second
+
+	// ReadTimeout equals to HeartBeatInterval plus the time (10s) after which we consider a
+	// read timeout since no heartbeat reply is received from server.
+	ReadTimeout  = HeartBeatInterval + 10*time.Second
+	WriteTimeout = 10 * time.Second
 )
 
 type LiveMsgFetcher struct {
@@ -35,7 +38,7 @@ func NewLiveMsgFetcher(userInfo *UserInfo, eventChan chan *Event) *LiveMsgFetche
 		UserInfo:   userInfo,
 		RoomID:     int64(userInfo.LiveRoom.RoomId),
 		conn:       nil,
-		hbTicker:   time.NewTicker(HeartBeatInterval * time.Second),
+		hbTicker:   time.NewTicker(HeartBeatInterval),
 		eventChan:  eventChan,
 		closeChan:  make(chan bool),
 		quitHbChan: make(chan bool),
