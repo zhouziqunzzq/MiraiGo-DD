@@ -320,40 +320,45 @@ func (m *bili) runLiveMsgFetcherForBiliUser(bid int64) {
 	m.fetcherRwMu.Lock()
 	defer m.fetcherRwMu.Unlock()
 
-	if _, ok := m.biliUidToMsgFetcher[bid]; ok {
-		logger.Warnf("live msg fetcher instance for bid %d already exist, ignoring...", bid)
+	if fetcher, ok := m.biliUidToMsgFetcher[bid]; ok {
+		// Note: we stop the stale live msg fetcher first because the live might
+		// have been cut off abnormally and the live msg fetcher had been corrupted.
+		logger.Warnf("live msg fetcher instance for bid %d already exist, stopping stable instance...", bid)
+		fetcher.Stop()
+		delete(m.biliUidToMsgFetcher, bid)
+		logger.Infof("successfully stopped live msg fetcher for bid %d", bid)
+	}
+
+	// get userinfo from buf
+	m.infoBufRwMu.RLock()
+	defer m.infoBufRwMu.RUnlock()
+	if info, ok := m.biliUserInfoBuf[bid]; !ok {
+		logger.Errorf("invalid bili uid %d, ignoring...", bid)
 	} else {
-		// get userinfo from buf
-		m.infoBufRwMu.RLock()
-		defer m.infoBufRwMu.RUnlock()
-		if info, ok := m.biliUserInfoBuf[bid]; !ok {
-			logger.Errorf("invalid bili uid %d, ignoring...", bid)
-		} else {
-			logger.Infof("starting live msg fetcher for bid %d", bid)
-			fetcher := NewLiveMsgFetcher(info, m.eventChan)
-			initSuccess := false
-			for i := 1; i <= MaxReconnection; i++ {
-				err := fetcher.Init()
-				if err != nil {
-					logger.WithError(err).Errorf(
-						"failed to initialize live msg fetcher for bid %d, retrying (%d/%d)",
-						bid, i, MaxReconnection,
-					)
-				} else {
-					initSuccess = true
-					break
-				}
-			}
-			if initSuccess {
-				fetcher.Run()
-				m.biliUidToMsgFetcher[bid] = fetcher
-				logger.Infof("successfully started live msg fetcher for bid %d", bid)
-			} else {
-				logger.Errorf(
-					"failed to initialize live msg fetcher for bid %d after %d attempts",
-					bid, MaxReconnection,
+		logger.Infof("starting live msg fetcher for bid %d", bid)
+		fetcher := NewLiveMsgFetcher(info, m.eventChan)
+		initSuccess := false
+		for i := 1; i <= MaxReconnection; i++ {
+			err := fetcher.Init()
+			if err != nil {
+				logger.WithError(err).Errorf(
+					"failed to initialize live msg fetcher for bid %d, retrying (%d/%d)",
+					bid, i, MaxReconnection,
 				)
+			} else {
+				initSuccess = true
+				break
 			}
+		}
+		if initSuccess {
+			fetcher.Run()
+			m.biliUidToMsgFetcher[bid] = fetcher
+			logger.Infof("successfully started live msg fetcher for bid %d", bid)
+		} else {
+			logger.Errorf(
+				"failed to initialize live msg fetcher for bid %d after %d attempts",
+				bid, MaxReconnection,
+			)
 		}
 	}
 }

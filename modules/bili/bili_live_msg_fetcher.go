@@ -13,6 +13,8 @@ const (
 	BiliLiveMsgApi    = "wss://broadcastlv.chat.bilibili.com:2245/sub"
 	HeartBeatInterval = 30
 	MaxReconnection   = 10
+	ReadTimeout       = 10 * time.Second
+	WriteTimeout      = 10 * time.Second
 )
 
 type LiveMsgFetcher struct {
@@ -59,6 +61,9 @@ func (f *LiveMsgFetcher) Init() error {
 }
 
 func (f *LiveMsgFetcher) reconnect() bool {
+	f.writeMu.Lock()
+	defer f.writeMu.Unlock()
+
 	for i := 1; i <= MaxReconnection; i++ {
 		logger.Warnf("trying to reconnect to room %d (%d/%d)", f.RoomID, i, MaxReconnection)
 		err := f.Init()
@@ -79,6 +84,9 @@ func (f *LiveMsgFetcher) Run() {
 		defer func() { f.isRunning = true }()
 	}
 
+	f.writeMu.Lock()
+	defer f.writeMu.Unlock()
+
 	// start heartbeat coroutine
 	go func() {
 		f.quitWg.Add(1)
@@ -88,6 +96,14 @@ func (f *LiveMsgFetcher) Run() {
 			err := f.sendHeartBeat()
 			if err != nil {
 				logger.WithError(err).Errorf("failed to send heartbeat for live room %d", f.RoomID)
+				// try to reconnect
+				if f.reconnect() {
+					continue
+				} else {
+					logger.Errorf("unable to reconnect for room %d, stopping live msg fetcher", f.RoomID)
+					f.closeChan <- true
+					return
+				}
 			}
 			select {
 			case <-f.hbTicker.C:
@@ -114,6 +130,7 @@ func (f *LiveMsgFetcher) Run() {
 				logger.Infof("main message loop coroutine for live room %d has stopped", f.RoomID)
 				return
 			default:
+				_ = f.conn.SetReadDeadline(time.Now().Add(ReadTimeout))
 				_, buffer, err := f.conn.ReadMessage()
 				if err != nil {
 					logger.WithError(err).Errorf("failed to read message for live room %d", f.RoomID)
@@ -184,6 +201,7 @@ func (f *LiveMsgFetcher) sendJoinRequest() error {
 	reqBin := encodeMsg(reqJson, JoinOp, JsonProcVer)
 	f.writeMu.Lock()
 	defer f.writeMu.Unlock()
+	_ = f.conn.SetWriteDeadline(time.Now().Add(WriteTimeout))
 	err = f.conn.WriteMessage(websocket.BinaryMessage, reqBin)
 	if err != nil {
 		return err
@@ -196,6 +214,7 @@ func (f *LiveMsgFetcher) sendHeartBeat() error {
 	reqBin := encodeMsg([]byte{}, HeartBeatOp, Uint32ProcVer)
 	f.writeMu.Lock()
 	defer f.writeMu.Unlock()
+	_ = f.conn.SetWriteDeadline(time.Now().Add(WriteTimeout))
 	err := f.conn.WriteMessage(websocket.BinaryMessage, reqBin)
 	if err != nil {
 		return err
