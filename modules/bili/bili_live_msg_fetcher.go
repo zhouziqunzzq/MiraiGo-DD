@@ -49,7 +49,9 @@ func NewLiveMsgFetcher(userInfo *UserInfo, eventChan chan *Event) *LiveMsgFetche
 func (f *LiveMsgFetcher) Init() error {
 	// connect to bilibili live message websocket API
 	var err error
+	f.writeMu.Lock()
 	f.conn, _, err = websocket.DefaultDialer.Dial(BiliLiveMsgApi, nil)
+	f.writeMu.Unlock()
 	if err != nil {
 		return err
 	}
@@ -64,9 +66,6 @@ func (f *LiveMsgFetcher) Init() error {
 }
 
 func (f *LiveMsgFetcher) reconnect() bool {
-	f.writeMu.Lock()
-	defer f.writeMu.Unlock()
-
 	for i := 1; i <= MaxReconnection; i++ {
 		logger.Warnf("trying to reconnect to room %d (%d/%d)", f.RoomID, i, MaxReconnection)
 		err := f.Init()
