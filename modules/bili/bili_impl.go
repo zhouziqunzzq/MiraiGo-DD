@@ -152,7 +152,8 @@ func (m *bili) Start(b *bot.Bot) {
 					if userInfo, ok := e.Data.(*UserInfo); ok {
 						m.broadcastStopLiveMsg(b.QQClient, userInfo)
 						// stop fetching danmu for this user
-						m.stopLiveMsgFetcherForBiliUser(int64(userInfo.Mid))
+						// Note: BLOCKING call! Call from a new goroutine!
+						go m.stopLiveMsgFetcherForBiliUser(int64(userInfo.Mid))
 					} else {
 						logger.Errorf("unknown event data provided for StopLive, event: %v", e)
 					}
@@ -363,6 +364,8 @@ func (m *bili) runLiveMsgFetcherForBiliUser(bid int64) {
 	}
 }
 
+// Note: BLOCKING call!! Refrain from calling directly from event broadcasting goroutine
+// since it might cause deadlock between that goroutine and message loop goroutine.
 func (m *bili) stopLiveMsgFetcherForBiliUser(bid int64) {
 	m.fetcherRwMu.Lock()
 	defer m.fetcherRwMu.Unlock()
