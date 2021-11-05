@@ -18,3 +18,7 @@ modules:
   naive_chatbot:
     is_enabled: true
     config_path: "./naive_chatbot.yaml"
+
+  diary:
+    is_enabled: true
+    config_path: "./diary.yaml"

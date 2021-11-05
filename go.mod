@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/Mrs4s/MiraiGo v0.0.0-20211101184540-c518dfcf1557
+	github.com/go-redis/redis/v8 v8.11.4 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/jonboulle/clockwork v0.1.0 // indirect

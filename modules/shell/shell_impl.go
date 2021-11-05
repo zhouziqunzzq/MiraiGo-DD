@@ -70,6 +70,7 @@ func (m *shell) Init() {
 	m.registerCmd("dd", handleDd, false)
 	m.registerCmd("ls", handleLs, false)
 	m.registerCmd("set", handleSet, false)
+	m.registerCmd("diary", handleDiary, false)
 }
 
 func (m *shell) PostInit() {

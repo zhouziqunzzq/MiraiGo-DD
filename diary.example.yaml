@@ -1,0 +1,4 @@
+enabled_groups: [ 321654987 ]
+redis_addr: "localhost:6379"
+redis_password: ""
+redis_db: 0

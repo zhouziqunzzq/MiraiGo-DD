@@ -4,11 +4,19 @@ import (
 	"fmt"
 	"github.com/zhouziqunzzq/MiraiGo-DD/modules/bili"
 	suki "github.com/zhouziqunzzq/MiraiGo-DD/modules/daredemo_suki"
+	"github.com/zhouziqunzzq/MiraiGo-DD/modules/diary"
 	"github.com/zhouziqunzzq/MiraiGo-DD/modules/naive_chatbot"
 	"strconv"
 	"strings"
 )
 import "github.com/Mrs4s/MiraiGo/message"
+
+const diaryHelpInfo = "用法：/diary [init|show|apply|events] [参数1] [参数2] ...\n" +
+	"init: 初始化用户日记\n" +
+	"show: 显示当前属性值\n" +
+	"apply: 记录事件\n" +
+	"events: 显示事件列表\n" +
+	"help: 显示帮助信息"
 
 func handlePing(ctx *CmdContext) {
 	sendTextRsp("pong", ctx)
@@ -112,6 +120,49 @@ func handleSet(ctx *CmdContext) {
 			}
 		default:
 			sendTextRsp(fmt.Sprintf("对象%s暂不支持 set 命令", ctx.ParsedCmd.Args[0]), ctx)
+		}
+	}
+}
+
+func handleDiary(ctx *CmdContext) {
+	gMsg, ok := ctx.OriginMsg.(*message.GroupMessage)
+	if !ok {
+		sendTextRsp("暂时仅支持群内设置聊天机器人参数", ctx)
+		return
+	}
+	gid, uid := gMsg.GroupCode, gMsg.Sender.Uin
+
+	if len(ctx.ParsedCmd.Args) == 0 {
+		sendTextRsp("参数错误", ctx)
+	} else {
+		switch ctx.ParsedCmd.Args[0] {
+		case "init":
+			if len(ctx.ParsedCmd.Args) != 2 {
+				sendTextRsp("参数错误，用法：/diary init <寿命>", ctx)
+			} else {
+				ttl, err := strconv.Atoi(ctx.ParsedCmd.Args[1])
+				if err != nil {
+					sendTextRsp("参数错误，<寿命>不是整数，用法：/diary init <寿命>", ctx)
+				} else if err = diary.InitDiary(gid, uid, int64(ttl)); err != nil {
+					sendTextRsp("初始化失败，未知错误", ctx)
+				} else {
+					sendTextRsp("初始化成功", ctx)
+				}
+			}
+		case "show":
+			sendTextRsp(diary.QueryDiary(gid, uid), ctx)
+		case "apply":
+			if len(ctx.ParsedCmd.Args) != 2 {
+				sendTextRsp("参数错误，用法：/diary apply <事件>", ctx)
+			} else {
+				sendTextRsp(diary.ApplyEventToDiary(gid, uid, ctx.ParsedCmd.Args[1]), ctx)
+			}
+		case "events":
+			sendTextRsp(diary.ListEvents(), ctx)
+		case "help":
+			sendTextRsp(diaryHelpInfo, ctx)
+		default:
+			sendTextRsp(fmt.Sprintf("未知参数，%s", diaryHelpInfo), ctx)
 		}
 	}
 }

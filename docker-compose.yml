@@ -1,0 +1,12 @@
+version: "3"
+services:
+  redis:
+    image: redis
+    container_name: bot-redis
+    # save a snapshot of the DB every 60 seconds if at least 1 write operation was performed
+    # (it will also lead to more logs, so the loglevel option may be desirable)
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379/tcp"
+    volumes:
+      - "./redis_data:/data"

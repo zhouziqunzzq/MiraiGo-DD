@@ -6,9 +6,11 @@ dd.yaml
 shell.yaml
 bili.yaml
 naive_chatbot.yaml
+diary.yaml
 
 logs/
 dd_img/
+redis_data/
 
 MiraiGo-DD
 
