@@ -62,17 +62,6 @@ func (m *diary) Init() {
 		return
 	}
 
-	// init redis cli
-	m.rdb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	// init contexts
-	m.redisCtx, m.redisCtxCancel = context.WithCancel(context.Background())
-	m.workerCtx, m.workerCtxCancel = context.WithCancel(context.Background())
-
 	// load module config
 	configPath := config.GlobalConfig.GetString("modules." + ModuleName + ".config_path")
 	if configPath == "" {
@@ -86,6 +75,17 @@ func (m *diary) Init() {
 		m.isEnabled = false
 		return
 	}
+
+	// init redis cli
+	m.rdb = redis.NewClient(&redis.Options{
+		Addr:     m.config.RedisAddr,
+		Password: m.config.RedisPassword,
+		DB:       m.config.RedisDb,
+	})
+
+	// init contexts
+	m.redisCtx, m.redisCtxCancel = context.WithCancel(context.Background())
+	m.workerCtx, m.workerCtxCancel = context.WithCancel(context.Background())
 
 	// load enabled groups
 	for _, groupCode := range m.config.EnabledGroups {
