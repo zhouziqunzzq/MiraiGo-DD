@@ -8,6 +8,8 @@ bili.yaml
 naive_chatbot.yaml
 diary.yaml
 
+redis.conf
+
 logs/
 dd_img/
 redis_data/

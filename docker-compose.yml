@@ -5,8 +5,10 @@ services:
     container_name: bot-redis
     # save a snapshot of the DB every 60 seconds if at least 1 write operation was performed
     # (it will also lead to more logs, so the loglevel option may be desirable)
-    command: redis-server --save 60 1 --loglevel warning
-    ports:
-      - "6379:6379/tcp"
+    command: redis-server /usr/local/etc/redis/redis.conf --save 60 1 --loglevel warning
+    # we skip ports section here since 6379 is already exposed in the DOCKERFILE...
+#    ports:
+#      - "127.0.0.1:6379:6379/tcp"
     volumes:
       - "./redis_data:/data"
+      - "./redis_conf:/usr/local/etc/redis" # make sure to set a strong password in the redis conf file!!!
