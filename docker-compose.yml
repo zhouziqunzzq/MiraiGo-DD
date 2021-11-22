@@ -3,6 +3,7 @@ services:
   redis:
     image: redis
     container_name: bot-redis
+    restart: always
     # save a snapshot of the DB every 60 seconds if at least 1 write operation was performed
     # (it will also lead to more logs, so the loglevel option may be desirable)
     command: redis-server /usr/local/etc/redis/redis.conf --save 60 1 --loglevel warning
