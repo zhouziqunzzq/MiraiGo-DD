@@ -58,7 +58,7 @@ func registerAutoReconnect(b *bot.Bot) {
 		}
 
 		// terminate if reconnection failed
-		if !b.Online {
+		if !b.Online.Load() {
 			logger.Error("failed to restore from disconnection, exiting")
 			_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 		}

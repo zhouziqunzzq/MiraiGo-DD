@@ -128,7 +128,7 @@ func (m *bili) Start(b *bot.Bot) {
 	go func() {
 		// wait until bot is online
 		for {
-			if b.Online {
+			if b.Online.Load() {
 				break
 			} else {
 				time.Sleep(1 * time.Second)
