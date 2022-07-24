@@ -183,5 +183,5 @@ func (m *shell) handleGroupMessage(qqClient *client.QQClient, groupMessage *mess
 }
 
 func (m *shell) registerCallbacks(b *bot.Bot) {
-	b.OnGroupMessage(m.handleGroupMessage)
+	b.GroupMessageEvent.Subscribe(m.handleGroupMessage)
 }

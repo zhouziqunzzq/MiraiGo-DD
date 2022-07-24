@@ -41,7 +41,7 @@ func (m *autoReconnect) Stop(b *bot.Bot, wg *sync.WaitGroup) {
 }
 
 func registerAutoReconnect(b *bot.Bot) {
-	b.OnDisconnected(func(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
+	b.DisconnectedEvent.Subscribe(func(qqClient *client.QQClient, event *client.ClientDisconnectedEvent) {
 		// try to reconnect
 		cnt := 0
 		for cnt < 10 {
